@@ -30,7 +30,13 @@ app.post('/users', (req, res) => {
         res.status(400);
         return res.send("Gimme a username");
     }
-    let query = 'INSERT INTO `hacknslash`.`Users` (`username`,`bio`) VALUES ("' + username + '", "' + req.body.bio + '")';
+    let password = req.body.password;
+    if(!password){
+        res.status(400);
+        return res.send("Gimme a password");
+    }
+    let query = 'INSERT INTO `hacknslash`.`Users` (`username`, `password`, `bio`) VALUES ("' + username + '", "'  + password + '", "'  + req.body.bio + '")';
+    console.log(query);
     connection.query(query, function (error, results, fields) {
         if (error) {
             res.status(500);
@@ -40,15 +46,62 @@ app.post('/users', (req, res) => {
         return res.send(JSON.stringify(results, null, 3));
     });
 })
+
 app.get('/users/new', (req, res) => {
 
     res.send('' +
         '<form action="/users" method="post">' +
         '<input type="text" name="username" />' +
+        '<input type="password" name="password" />' +
         '<textarea name="bio"></textarea>' +
         '<button type="submit">Save</button>' +
         '</form>' +
         '')
+})
+app.get('/users/login', (req, res) => {
+
+    res.send('' +
+        '<form action="/users/login" method="post">' +
+        '<input type="text" name="username" />' +
+        '<input type="password" name="password" />' +
+        '<button type="submit">Save</button>' +
+        '</form>' +
+        '')
+})
+app.post('/users/login', (req, res) => {
+
+    const connection = app.services.mysql.connect();
+    let username = req.body.username;
+    let password = req.body.password;
+    let allowEvil = true;
+    if(!allowEvil){
+        username = connection.escape(req.body.username);
+        password = connection.escape(req.body.password);
+    }
+    let query = 'SELECT * FROM Users WHERE username = "' + username + "' AND password = '" + password + '"';
+    console.log(query);
+    connection.query(query, function (error, results, fields) {
+        if (error) {
+            res.status(500);
+            console.log(error);
+            return res.send(error.message);
+        }
+        return res.send(JSON.stringify(results, null, 3));
+    });
+})
+app.get('/users/:user', (req, res) => {
+    const connection = app.services.mysql.connect();
+
+    let query = 'SELECT * FROM `hacknslash`.`Users` WHERE username = "' + req.params.user +'"';
+    console.log(query);
+    connection.query(query, function (error, results, fields) {
+        if (error) {
+            res.status(500);
+            console.log(error);
+            return res.send(error.message);
+        }
+        return res.send(JSON.stringify(results, null, 3));
+    });
 })
 app.get('/profile/edit', (req, res) => {
     let body = fs.readFileSync('/home/user1a/mlea/WebstormProjects/hack-n-slash/tmp/blah.json');
